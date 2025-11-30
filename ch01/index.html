@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<body>
+<button onclick="getLocation()">取得定位</button>
+
+<script>
+function getLocation() {
+  navigator.geolocation.getCurrentPosition(
+    pos => console.log("成功", pos.coords),
+    err => console.log("失敗", err)
+  );
+}
+</script>
+
+</body>
+</html>
