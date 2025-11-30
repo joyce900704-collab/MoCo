@@ -1,0 +1,38 @@
+// 檢查瀏覽器是否支援地理位置
+if ("geolocation" in navigator) {
+  console.log("地理位置服務可用");
+} else {
+  console.log("地理位置服務不可用");
+}
+
+// 取得當前位置
+navigator.geolocation.getCurrentPosition(
+  (position) => {
+    console.log("位置取得成功:", position);
+  },
+  (error) => {
+    console.log("位置取得失敗:", error);
+  }
+);
+// 請求感測器權限（注意：部分瀏覽器可能不支援）
+async function requestSensorPermissions() {
+  try {
+    if (navigator.permissions) {
+
+      // 查詢加速度計權限
+      await navigator.permissions.query({ name: "accelerometer" });
+
+      // 查詢陀螺儀權限
+      await navigator.permissions.query({ name: "gyroscope" });
+    }
+  } catch (error) {
+    console.log("權限請求可能不被支援");
+  }
+}
+function handlePosition(position) {
+  const coords = position.coords;
+
+  console.log("緯度:", coords.latitude);
+  console.log("經度:", coords.longitude);
+  console.log("海拔:", coords.altitude);
+}
