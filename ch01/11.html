@@ -1,54 +1,177 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>定位與感測器測試</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>取得緯度與經度 Demo</title>
+  <style>
+    body{font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", "Helvetica Neue", Arial; padding:20px;}
+    button{padding:8px 14px; font-size:16px;}
+    .info{margin-top:12px;}
+    .row{margin:6px 0;}
+    .label{font-weight:600; width:120px; display:inline-block;}
+    .value{display:inline-block;}
+    pre{background:#f6f6f6;padding:10px;border-radius:6px;overflow:auto;}
+  </style>
 </head>
-
 <body>
-  <h1>定位與感測器測試頁面</h1>
-  <button onclick="getLocation()">取得定位</button>
-  <button onclick="requestSensorPermissions()">請求感測器權限</button>
+  <h2>取得目前位置 (緯度 / 經度)</h2>
 
-  <script>
-    // 檢查瀏覽器是否支援地理位置 
-    if ("geolocation" in navigator) {
-      console.log("地理位置服務可用");
-    } else {
-      console.log("地理位置服務不可用");
-    }
+  <button id="btnGet">取得位置</button>
+  <button id="btnWatch">開始追蹤位置</button>
+  <button id="btnClear">停止追蹤 / 清除</button>
 
-    function getLocation() {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          console.log("位置取得成功:", position);
-          handlePosition(position);
-        },
-        (error) => {
-          console.log("位置取得失敗:", error);
-        }
-      );
-    }
+  <div class="info" id="output">
+    <div class="row"><span class="label">緯度 (latitude):</span><span class="value" id="lat">—</span></div>
+    <div class="row"><span class="label">經度 (longitude):</span><span class="value" id="lon">—</span></div>
+    <div class="row"><span class="label">精度 (accuracy m):</span><span class="value" id="acc">—</span></div>
+    <div class="row"><span class="label">海拔 (altitude m):</span><span class="value" id="alt">—</span></div>
+    <div class="row"><span class="label">速度 (m/s):</span><span class="value" id="spd">—</span></div>
+    <div class="row"><span class="label">方向 (heading):</span><span class="value" id="hdg">—</span></div>
+  </div>
 
-    // 請求感測器權限（注意：部分瀏覽器可能不支援）
-    async function requestSensorPermissions() {
-      try {
-        if (navigator.permissions) {
-          await navigator.permissions.query({ name: "accelerometer" });
-          await navigator.permissions.query({ name: "gyroscope" });
-        }
-      } catch (error) {
-        console.log("權限請求可能不被支援");
-      }
-    }
+  <h3>Console 訊息</h3>
+  <pre id="log"></pre>
 
-    function handlePosition(position) {
+<script>
+const btnGet = document.getElementById('btnGet');
+const btnWatch = document.getElementById('btnWatch');
+const btnClear = document.getElementById('btnClear');
+const logEl = document.getElementById('log');
+const setText = (id, text) => document.getElementById(id).textContent = text ?? '—';
+
+let watchId = null;
+
+function appendLog(msg){
+  const time = new Date().toLocaleTimeString();
+  logEl.textContent = `[${time}] ${msg}\n` + logEl.textContent;
+  console.log(msg);
+}
+
+// 簡單檢查瀏覽器是否支援 geolocation
+function isGeolocationSupported(){
+  return 'geolocation' in navigator;
+}
+
+// 使用 callback 的方式取得一次位置
+function getCurrentPositionOnce(){
+  if(!isGeolocationSupported()){
+    appendLog('此瀏覽器不支援 Geolocation。');
+    return;
+  }
+
+  const options = {
+    enableHighAccuracy: true, // 嘗試使用較高精度 (耗電)
+    timeout: 10000,           // 最多等 10 秒
+    maximumAge: 0             // 不要用快取的位置
+  };
+
+  appendLog('開始請求位置（getCurrentPosition）...');
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      // 成功
       const coords = position.coords;
+      appendLog('位置取得成功: ' + JSON.stringify({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        accuracy: coords.accuracy,
+        altitude: coords.altitude,
+        altitudeAccuracy: coords.altitudeAccuracy,
+        heading: coords.heading,
+        speed: coords.speed
+      }));
+      // 顯示到頁面
+      setText('lat', coords.latitude);
+      setText('lon', coords.longitude);
+      setText('acc', coords.accuracy + ' m');
+      setText('alt', coords.altitude === null ? '無資料' : (coords.altitude + ' m'));
+      setText('spd', coords.speed === null ? '無資料' : (coords.speed + ' m/s'));
+      setText('hdg', coords.heading === null ? '無資料' : coords.heading);
+    },
+    (error) => {
+      // 失敗或被拒絕
+      appendLog('位置取得失敗（錯誤代碼 ' + error.code + '）: ' + error.message);
+      // code 1: PERMISSION_DENIED, 2: POSITION_UNAVAILABLE, 3: TIMEOUT
+      switch(error.code){
+        case 1: appendLog('使用者拒絕定位權限或網站未受信任（請用 HTTPS 或 localhost）'); break;
+        case 2: appendLog('無法取得位置資料'); break;
+        case 3: appendLog('取得位置逾時'); break;
+      }
+    },
+    options
+  );
+}
 
-      console.log("緯度:", coords.latitude);
-      console.log("經度:", coords.longitude);
-      console.log("海拔:", coords.altitude);
-    }
-  </script>
+// 使用 watchPosition 追蹤位置變化
+function startWatchPosition(){
+  if(!isGeolocationSupported()){
+    appendLog('此瀏覽器不支援 Geolocation。');
+    return;
+  }
+  if(watchId !== null){
+    appendLog('已在追蹤位置，watchId=' + watchId);
+    return;
+  }
+
+  appendLog('開始追蹤位置（watchPosition）...');
+  const options = { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 };
+  watchId = navigator.geolocation.watchPosition(
+    (position) => {
+      const coords = position.coords;
+      appendLog('追蹤更新: lat=' + coords.latitude + ', lon=' + coords.longitude + ', acc=' + coords.accuracy);
+      setText('lat', coords.latitude);
+      setText('lon', coords.longitude);
+      setText('acc', coords.accuracy + ' m');
+      setText('alt', coords.altitude === null ? '無資料' : (coords.altitude + ' m'));
+      setText('spd', coords.speed === null ? '無資料' : (coords.speed + ' m/s'));
+      setText('hdg', coords.heading === null ? '無資料' : coords.heading);
+    },
+    (error) => {
+      appendLog('追蹤錯誤: ' + error.message);
+    },
+    options
+  );
+}
+
+// 停止追蹤
+function clearWatchOrReset(){
+  if(watchId !== null){
+    navigator.geolocation.clearWatch(watchId);
+    appendLog('停止追蹤 (clearWatch) id=' + watchId);
+    watchId = null;
+  } else {
+    appendLog('沒有正在追蹤的位置。');
+  }
+  // 清除頁面顯示
+  setText('lat', '—');
+  setText('lon', '—');
+  setText('acc', '—');
+  setText('alt', '—');
+  setText('spd', '—');
+  setText('hdg', '—');
+}
+
+btnGet.addEventListener('click', getCurrentPositionOnce);
+btnWatch.addEventListener('click', startWatchPosition);
+btnClear.addEventListener('click', clearWatchOrReset);
+
+// 範例：可使用 Permissions API 先查詢權限狀態（非所有瀏覽器/情境都支援）
+async function checkPermission(){
+  if(!('permissions' in navigator)) {
+    appendLog('此瀏覽器不支援 Permissions API，直接請求位置權限。');
+    return;
+  }
+  try {
+    const status = await navigator.permissions.query({name: 'geolocation'});
+    appendLog('目前 geolocation 權限狀態: ' + status.state);
+    // 可監聽變化
+    status.onchange = () => appendLog('權限狀態變更為: ' + status.state);
+  } catch(e){
+    appendLog('查詢權限發生錯誤: ' + e);
+  }
+}
+// 頁面載入時顯示權限狀態
+checkPermission();
+</script>
 </body>
 </html>
