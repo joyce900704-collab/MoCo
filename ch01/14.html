@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fetch GET and POST Demo</title>
+    <style>
+        .sensor-data { margin: 20px; padding: 15px; border: 1px solid #ccc; }
+        .axis { margin: 10px 0; }
+        .value { font-weight: bold; color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Fetch GET and POST Demo</h1>
+
+    <!-- GET 請求區域 -->
+    <h2>GET Request</h2>
+    <button id="getButton">Get Data</button>
+    <pre id="getResult"></pre>
+
+    <!-- POST 請求區域 -->
+    <h2>POST Request</h2>
+    <form id="postForm">
+        First Name: <input type="text" id="firstName" value="John"><br>
+        Last Name: <input type="text" id="lastName" value="Smith"><br>
+        <button type="submit">Submit</button>
+    </form>
+    <pre id="postResult"></pre>
+
+    <script>
+        // GET 請求
+        document.getElementById('getButton').onclick = async () => {
+            try {
+                let response = await fetch('https://jsonplaceholder.typicode.com/posts/1');
+                let result = await response.json();
+                document.getElementById('getResult').textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('Failed to fetch data.');
+            }
+        };
+
+        // POST 請求
+        document.getElementById('postForm').onsubmit = async (e) => {
+            e.preventDefault();  // 阻止表單的預設提交行為
+
+            let user = {
+                name: document.getElementById('firstName').value,
+                surname: document.getElementById('lastName').value
+            };
+
+            try {
+                let response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(user)
+                });
+
+                let result = await response.json();
+                document.getElementById('postResult').textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                console.error('Error sending data:', error);
+                alert('Failed to send data.');
+            }
+        };
+    </script>
+</body>
+</html>
