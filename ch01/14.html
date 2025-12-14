@@ -1,57 +1,207 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
-
 <head>
-    <meta charset="UTF-8">
-    <title>GET 表單</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GET 表單｜美化版</title>
+
+  <!-- ======================
+       基本樣式設定
+       ====================== -->
+  <style>
+    :root {
+      --primary: #4f46e5;      /* 主色 */
+      --primary-hover: #4338ca;
+      --bg: #f4f6fb;           /* 背景色 */
+      --card-bg: #ffffff;     /* 卡片背景 */
+      --text-main: #1f2937;   /* 主要文字 */
+      --text-sub: #6b7280;    /* 次要文字 */
+      --border: #e5e7eb;      /* 邊框色 */
+      --radius: 14px;         /* 圓角 */
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI", "Noto Sans TC", system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #eef2ff, #fdf2f8);
+      color: var(--text-main);
+    }
+
+    /* ======================
+       表單卡片
+       ====================== */
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.08),
+        0 4px 10px rgba(0, 0, 0, 0.04);
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.6rem;
+      text-align: center;
+    }
+
+    .card p {
+      margin: 0 0 28px;
+      text-align: center;
+      color: var(--text-sub);
+      font-size: 0.95rem;
+    }
+
+    /* ======================
+       輸入欄位
+       ====================== */
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: var(--text-sub);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    /* ======================
+       送出按鈕
+       ====================== */
+    .btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    /* ======================
+       結果顯示區
+       ====================== */
+    .result {
+      margin-top: 22px;
+      padding: 14px;
+      background: #f9fafb;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      font-size: 0.85rem;
+      color: #374151;
+      white-space: pre-wrap;
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
-
+  <div class="card">
     <h2>GET 表單</h2>
+    <p>使用 Fetch API 送出 GET 請求</p>
 
-    <form>
-        <label>
-            姓名：
-            <input type="text" id="name">
-        </label><br><br>
+    <!-- ======================
+         表單內容
+         ====================== -->
+    <form id="getForm" autocomplete="off">
+      <div class="form-group">
+        <label for="name">姓名</label>
+        <input type="text" id="name" placeholder="請輸入姓名" />
+      </div>
 
-        <label>
-            電話：
-            <input type="tel" id="phone">
-        </label><br><br>
+      <div class="form-group">
+        <label for="phone">電話</label>
+        <input type="tel" id="phone" placeholder="09xx-xxx-xxx" />
+      </div>
 
-        <label>
-            年齡：
-            <input type="number" id="age">
-        </label><br><br>
+      <div class="form-group">
+        <label for="age">年齡</label>
+        <input type="number" id="age" placeholder="請輸入年齡" />
+      </div>
 
-        <button type="button" id="getBtn">送出 (GET)</button>
+      <button type="button" class="btn" id="getBtn">
+        🚀 送出 (GET)
+      </button>
     </form>
 
-    <script>
-        document.getElementById('getBtn').addEventListener('click', () => {
-            const name = document.getElementById('name').value;
-            const phone = document.getElementById('phone').value;
-            const age = document.getElementById('age').value;
+    <div class="result" id="result"></div>
+  </div>
 
-            const query =
-                `name=${encodeURIComponent(name)}&` +
-                `phone=${encodeURIComponent(phone)}&` +
-                `age=${encodeURIComponent(age)}`;
+  <!-- ======================
+       JavaScript 區塊
+       ====================== -->
+  <script>
+    const getBtn = document.getElementById('getBtn');
+    const resultBox = document.getElementById('result');
 
-            fetch(`https://httpcan.org/get?${query}`)
-                .then(res => res.json())
-                .then(data => {
-                    console.log('GET 成功:', data);
-                })
-                .catch(err => {
-                    console.error('GET 失敗:', err);
-                });
+    getBtn.addEventListener('click', () => {
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const age = document.getElementById('age').value.trim();
+
+      // 組合 Query String
+      const query = new URLSearchParams({
+        name,
+        phone,
+        age
+      }).toString();
+
+      fetch(`https://httpcan.org/get?${query}`)
+        .then(response => response.json())
+        .then(data => {
+          console.log('GET 成功:', data);
+
+          resultBox.style.display = 'block';
+          resultBox.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+          console.error('GET 失敗:', error);
+
+          resultBox.style.display = 'block';
+          resultBox.textContent = '發生錯誤，請稍後再試';
         });
-    </script>
-
+    });
+  </script>
 </body>
-
 </html>
