@@ -1,68 +1,207 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
-    <title>Fetch GET and POST Demo</title>
-    <style>
-        .sensor-data { margin: 20px; padding: 15px; border: 1px solid #ccc; }
-        .axis { margin: 10px 0; }
-        .value { font-weight: bold; color: #007bff; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GET 表單｜美化版</title>
+
+  <!-- ======================
+       基本樣式設定
+       ====================== -->
+  <style>
+    :root {
+      --primary: #4f46e5;      /* 主色 */
+      --primary-hover: #4338ca;
+      --bg: #f4f6fb;           /* 背景色 */
+      --card-bg: #ffffff;     /* 卡片背景 */
+      --text-main: #1f2937;   /* 主要文字 */
+      --text-sub: #6b7280;    /* 次要文字 */
+      --border: #e5e7eb;      /* 邊框色 */
+      --radius: 14px;         /* 圓角 */
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI", "Noto Sans TC", system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #eef2ff, #fdf2f8);
+      color: var(--text-main);
+    }
+
+    /* ======================
+       表單卡片
+       ====================== */
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.08),
+        0 4px 10px rgba(0, 0, 0, 0.04);
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.6rem;
+      text-align: center;
+    }
+
+    .card p {
+      margin: 0 0 28px;
+      text-align: center;
+      color: var(--text-sub);
+      font-size: 0.95rem;
+    }
+
+    /* ======================
+       輸入欄位
+       ====================== */
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: var(--text-sub);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    /* ======================
+       送出按鈕
+       ====================== */
+    .btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    /* ======================
+       結果顯示區
+       ====================== */
+    .result {
+      margin-top: 22px;
+      padding: 14px;
+      background: #f9fafb;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      font-size: 0.85rem;
+      color: #374151;
+      white-space: pre-wrap;
+      display: none;
+    }
+  </style>
 </head>
+
 <body>
-    <h1>Fetch GET and POST Demo</h1>
+  <div class="card">
+    <h2>GET 表單</h2>
+    <p>使用 Fetch API 送出 GET 請求</p>
 
-    <!-- GET 請求區域 -->
-    <h2>GET Request</h2>
-    <button id="getButton">Get Data</button>
-    <pre id="getResult"></pre>
+    <!-- ======================
+         表單內容
+         ====================== -->
+    <form id="getForm" autocomplete="off">
+      <div class="form-group">
+        <label for="name">姓名</label>
+        <input type="text" id="name" placeholder="請輸入姓名" />
+      </div>
 
-    <!-- POST 請求區域 -->
-    <h2>POST Request</h2>
-    <form id="postForm">
-        First Name: <input type="text" id="firstName" value="John"><br>
-        Last Name: <input type="text" id="lastName" value="Smith"><br>
-        <button type="submit">Submit</button>
+      <div class="form-group">
+        <label for="phone">電話</label>
+        <input type="tel" id="phone" placeholder="09xx-xxx-xxx" />
+      </div>
+
+      <div class="form-group">
+        <label for="age">年齡</label>
+        <input type="number" id="age" placeholder="請輸入年齡" />
+      </div>
+
+      <button type="button" class="btn" id="getBtn">
+        🚀 送出 (GET)
+      </button>
     </form>
-    <pre id="postResult"></pre>
 
-    <script>
-        // GET 請求
-        document.getElementById('getButton').onclick = async () => {
-            try {
-                let response = await fetch('https://jsonplaceholder.typicode.com/posts/1');
-                let result = await response.json();
-                document.getElementById('getResult').textContent = JSON.stringify(result, null, 2);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                alert('Failed to fetch data.');
-            }
-        };
+    <div class="result" id="result"></div>
+  </div>
 
-        // POST 請求
-        document.getElementById('postForm').onsubmit = async (e) => {
-            e.preventDefault();  // 阻止表單的預設提交行為
+  <!-- ======================
+       JavaScript 區塊
+       ====================== -->
+  <script>
+    const getBtn = document.getElementById('getBtn');
+    const resultBox = document.getElementById('result');
 
-            let user = {
-                name: document.getElementById('firstName').value,
-                surname: document.getElementById('lastName').value
-            };
+    getBtn.addEventListener('click', () => {
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const age = document.getElementById('age').value.trim();
 
-            try {
-                let response = await fetch('https://jsonplaceholder.typicode.com/posts', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(user)
-                });
+      // 組合 Query String
+      const query = new URLSearchParams({
+        name,
+        phone,
+        age
+      }).toString();
 
-                let result = await response.json();
-                document.getElementById('postResult').textContent = JSON.stringify(result, null, 2);
-            } catch (error) {
-                console.error('Error sending data:', error);
-                alert('Failed to send data.');
-            }
-        };
-    </script>
+      fetch(`https://httpcan.org/get?${query}`)
+        .then(response => response.json())
+        .then(data => {
+          console.log('GET 成功:', data);
+
+          resultBox.style.display = 'block';
+          resultBox.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+          console.error('GET 失敗:', error);
+
+          resultBox.style.display = 'block';
+          resultBox.textContent = '發生錯誤，請稍後再試';
+        });
+    });
+  </script>
 </body>
 </html>
