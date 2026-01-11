@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>行走穩定度分析器</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      margin: 10px;
+    }
+
+    .result {
+      margin-top: 20px;
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    #score {
+      font-size: 48px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    textarea {
+      width: 100%;
+      height: 90px;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    .note {
+      font-size: 12px;
+      color: gray;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>行走穩定度分析器</h1>
+<p id="status">尚未開始測量</p>
+
+<button id="startBtn">開始測量</button>
+<button id="stopBtn" disabled>停止測量</button>
+
+<div class="result">
+  <h2>穩定度分數（0–100）</h2>
+  <p id="score">--</p>
+  <p id="desc"></p>
+</div>
+
+<textarea id="shareText" readonly placeholder="這裡會產生可分享的文字內容"></textarea>
+
+<p class="note">※ 本系統僅供行走狀態評估，非醫療用途</p>
+
+<script>
+  let values = [];
+  let listening = false;
+
+  const statusText = document.getElementById("status");
+  const scoreText = document.getElementById("score");
+  const descText = document.getElementById("desc");
+  const shareText = document.getElementById("shareText");
+  const startBtn = document.getElementById("startBtn");
+  const stopBtn = document.getElementById("stopBtn");
+
+  startBtn.onclick = () => {
+    values = [];
+    listening = true;
+    statusText.innerText = "測量中，請自然行走";
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+
+    if (typeof DeviceMotionEvent !== "undefined") {
+      window.addEventListener("devicemotion", onMotion);
+    } else {
+      alert("此裝置不支援行動感測");
+    }
+  };
+
+  stopBtn.onclick = () => {
+    listening = false;
+    window.removeEventListener("devicemotion", onMotion);
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    analyze();
+  };
+
+  function onMotion(event) {
+    if (!listening) return;
+
+    const acc = event.accelerationIncludingGravity;
+    if (!acc) return;
+
+    const magnitude = Math.sqrt(
+      acc.x * acc.x +
+      acc.y * acc.y +
+      acc.z * acc.z
+    );
+
+    values.push(magnitude);
+  }
+
+  function analyze() {
+    if (values.length === 0) return;
+
+    let avg = values.reduce((a, b) => a + b, 0) / values.length;
+
+    let variance = values.reduce(
+      (a, b) => a + Math.abs(b - avg),
+      0
+    ) / values.length;
+
+    let score = Math.max(
+      0,
+      Math.min(100, Math.round(100 - variance * 10))
+    );
+
+    let desc = "";
+    if (score >= 80) desc = "行走狀態穩定";
+    else if (score >= 50) desc = "行走稍有晃動";
+    else desc = "行走不穩定，請注意安全";
+
+    scoreText.innerText = score;
+    descText.innerText = desc;
+
+    shareText.value =
+      `我的行走穩定度分數為 ${score} 分，${desc}。（非醫療評估）`;
+
+    statusText.innerText = "測量完成";
+  }
+</script>
+
+</body>
+</html>
